@@ -1,0 +1,21 @@
+# Virtual Environment
+venv/
+
+# Python
+__pycache__/
+*.pyc
+
+# VS Code
+.vscode/
+
+# Raw FAERS Dataset
+data/raw/
+
+# Large Processed Files
+data/processed/drug_clean.csv
+data/processed/demo_clean.csv
+data/processed/reac_clean.csv
+data/processed/outc_clean.csv
+
+# Logs
+*.log
