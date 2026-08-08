@@ -43,10 +43,10 @@ def load_reaction():
 
 @st.cache_data
 def load_demo():
-    return pd.DataFrame({
-        "dataset": ["DEMO"],
-        "records": [385288]
-    })
+    return pd.read_csv(
+        "data/deployment/demo_summary.csv",
+        low_memory=False
+    )
 
 
 @st.cache_data
