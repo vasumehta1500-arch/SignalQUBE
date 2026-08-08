@@ -1,109 +1,256 @@
 import pandas as pd
-from pathlib import Path
 import joblib
 
+from pathlib import Path
+
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
+
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
     recall_score,
     f1_score,
-    classification_report,
-    confusion_matrix
+    roc_auc_score,
+    confusion_matrix,
+    classification_report
 )
 
-# ---------------------------------------
-# Load Training Dataset
-# ---------------------------------------
 
-data_path = Path(__file__).parent / "training_data.csv"
+# --------------------------------------------------
+# PATHS
+# --------------------------------------------------
 
-df = pd.read_csv(data_path)
-
-print("=" * 60)
-print("Training Dataset Loaded")
-print(df.head())
-print("=" * 60)
-
-# ---------------------------------------
-# Features & Target
-# ---------------------------------------
-
-X = df[["A", "B", "C", "D", "PRR", "ROR"]]
-y = df["Label"]
-
-# ---------------------------------------
-# Train-Test Split
-# ---------------------------------------
-
-X_train, X_test, y_train, y_test = train_test_split(
-    X,
-    y,
-    test_size=0.20,
-    random_state=42,
-    stratify=y
+DATA_FILE = Path(
+    "src/ml/training_data.csv"
 )
 
-# ---------------------------------------
-# Train Model
-# ---------------------------------------
+MODEL_FILE = Path(
+    "src/ml/signal_model.pkl"
+)
 
-model = LogisticRegression(max_iter=1000)
+SCALER_FILE = Path(
+    "src/ml/scaler.pkl"
+)
 
-model.fit(X_train, y_train)
 
-# ---------------------------------------
-# Prediction
-# ---------------------------------------
+# --------------------------------------------------
+# MAIN
+# --------------------------------------------------
 
-y_pred = model.predict(X_test)
+def main():
 
-accuracy = accuracy_score(y_test, y_pred)
-precision = precision_score(y_test, y_pred)
-recall = recall_score(y_test, y_pred)
-f1 = f1_score(y_test, y_pred)
-cm = confusion_matrix(y_test, y_pred)
+    print("=" * 60)
+    print("SIGNALQUBE ML MODEL TRAINING")
+    print("=" * 60)
 
-print("\nAccuracy :", round(accuracy * 100, 2), "%")
-print("Precision:", round(precision * 100, 2), "%")
-print("Recall   :", round(recall * 100, 2), "%")
-print("F1 Score :", round(f1 * 100, 2), "%")
+    # --------------------------------------------------
+    # LOAD DATA
+    # --------------------------------------------------
 
-print("\nConfusion Matrix")
-print(cm)
+    print("\nLoading training dataset...")
 
-print("\nClassification Report")
-print(classification_report(y_test, y_pred))
+    df = pd.read_csv(DATA_FILE)
 
-# ---------------------------------------
-# Save ML Model
-# ---------------------------------------
+    print(
+        f"Dataset shape: {df.shape}"
+    )
 
-model_path = Path(__file__).parent / "signal_model.pkl"
+    # --------------------------------------------------
+    # FEATURES
+    # --------------------------------------------------
 
-joblib.dump(model, model_path)
+    feature_columns = [
+        "A",
+        "B",
+        "C",
+        "D",
+        "PRR",
+        "ROR",
+        "ChiSquare",
+        "ROR_Lower95"
+    ]
 
-print("\nModel Saved Successfully")
-print(model_path)
+    X = df[feature_columns]
 
-# ---------------------------------------
-# Save Model Metrics
-# ---------------------------------------
+    y = df["Label"]
 
-metrics = {
-    "Accuracy": accuracy,
-    "Precision": precision,
-    "Recall": recall,
-    "F1": f1,
-    "ConfusionMatrix": cm
-}
+    print("\nFeatures:")
+    print(feature_columns)
 
-metrics_path = Path(__file__).parent / "model_metrics.pkl"
+    print("\nTarget distribution:")
+    print(y.value_counts())
 
-joblib.dump(metrics, metrics_path)
+    # --------------------------------------------------
+    # TRAIN / TEST SPLIT
+    # --------------------------------------------------
 
-print("\nModel Metrics Saved Successfully")
-print(metrics_path)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=0.20,
+        random_state=42,
+        stratify=y
+    )
 
-print("\nTraining Completed Successfully.")
+    print("\nTraining samples:", len(X_train))
+    print("Testing samples :", len(X_test))
+
+    # --------------------------------------------------
+    # FEATURE SCALING
+    # --------------------------------------------------
+
+    scaler = StandardScaler()
+
+    X_train_scaled = scaler.fit_transform(
+        X_train
+    )
+
+    X_test_scaled = scaler.transform(
+        X_test
+    )
+
+    # --------------------------------------------------
+    # TRAIN MODEL
+    # --------------------------------------------------
+
+    print("\nTraining Logistic Regression...")
+
+    model = LogisticRegression(
+        max_iter=1000,
+        random_state=42
+    )
+
+    model.fit(
+        X_train_scaled,
+        y_train
+    )
+
+    # --------------------------------------------------
+    # PREDICTION
+    # --------------------------------------------------
+
+    y_pred = model.predict(
+        X_test_scaled
+    )
+
+    y_probability = model.predict_proba(
+        X_test_scaled
+    )[:, 1]
+
+    # --------------------------------------------------
+    # EVALUATION
+    # --------------------------------------------------
+
+    accuracy = accuracy_score(
+        y_test,
+        y_pred
+    )
+
+    precision = precision_score(
+        y_test,
+        y_pred,
+        zero_division=0
+    )
+
+    recall = recall_score(
+        y_test,
+        y_pred,
+        zero_division=0
+    )
+
+    f1 = f1_score(
+        y_test,
+        y_pred,
+        zero_division=0
+    )
+
+    auc = roc_auc_score(
+        y_test,
+        y_probability
+    )
+
+    print("\n" + "=" * 60)
+    print("MODEL PERFORMANCE")
+    print("=" * 60)
+
+    print(
+        f"\nAccuracy  : {accuracy:.4f}"
+    )
+
+    print(
+        f"Precision : {precision:.4f}"
+    )
+
+    print(
+        f"Recall    : {recall:.4f}"
+    )
+
+    print(
+        f"F1 Score  : {f1:.4f}"
+    )
+
+    print(
+        f"ROC-AUC   : {auc:.4f}"
+    )
+
+    # --------------------------------------------------
+    # CONFUSION MATRIX
+    # --------------------------------------------------
+
+    print("\nConfusion Matrix:")
+
+    print(
+        confusion_matrix(
+            y_test,
+            y_pred
+        )
+    )
+
+    # --------------------------------------------------
+    # CLASSIFICATION REPORT
+    # --------------------------------------------------
+
+    print("\nClassification Report:")
+
+    print(
+        classification_report(
+            y_test,
+            y_pred,
+            zero_division=0
+        )
+    )
+
+    # --------------------------------------------------
+    # SAVE MODEL
+    # --------------------------------------------------
+
+    MODEL_FILE.parent.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    joblib.dump(
+        model,
+        MODEL_FILE
+    )
+
+    joblib.dump(
+        scaler,
+        SCALER_FILE
+    )
+
+    print("\nModel saved:")
+    print(MODEL_FILE)
+
+    print("\nScaler saved:")
+    print(SCALER_FILE)
+
+    print("\n" + "=" * 60)
+    print("MODEL TRAINING COMPLETED")
+    print("=" * 60)
+
+
+if __name__ == "__main__":
+    main()
