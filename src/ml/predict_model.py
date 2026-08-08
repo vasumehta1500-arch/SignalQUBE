@@ -3,13 +3,24 @@ import pandas as pd
 from pathlib import Path
 
 
-MODEL_FILE = Path("src/ml/signal_model.pkl")
-SCALER_FILE = Path("src/ml/scaler.pkl")
+# --------------------------------------------------
+# FILE PATHS
+# --------------------------------------------------
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+MODEL_FILE = PROJECT_ROOT / "src" / "ml" / "signal_model.pkl"
+SCALER_FILE = PROJECT_ROOT / "src" / "ml" / "scaler.pkl"
+
+
+# --------------------------------------------------
+# SIGNAL PREDICTOR
+# --------------------------------------------------
 
 class SignalPredictor:
 
     def __init__(self):
+
         print("Loading ML model...")
 
         self.model = joblib.load(MODEL_FILE)
@@ -25,6 +36,10 @@ class SignalPredictor:
             "ChiSquare",
             "ROR_Lower95"
         ]
+
+    # --------------------------------------------------
+    # PREDICT
+    # --------------------------------------------------
 
     def predict(
         self,
@@ -49,15 +64,19 @@ class SignalPredictor:
             "ROR_Lower95": ROR_Lower95
         }])
 
-        # Apply same scaling used during training
+        # Make sure feature order is identical
+        # to the training dataset
+        data = data[self.features]
+
+        # Apply scaler
         data_scaled = self.scaler.transform(data)
 
-        # Prediction
+        # ML prediction
         prediction = self.model.predict(
             data_scaled
         )[0]
 
-        # Probability of signal
+        # Probability
         probability = self.model.predict_proba(
             data_scaled
         )[0][1]
@@ -76,6 +95,44 @@ class SignalPredictor:
             "Result": result
         }
 
+
+# --------------------------------------------------
+# DASHBOARD COMPATIBILITY FUNCTION
+# --------------------------------------------------
+
+def predict_signal(
+    A,
+    B,
+    C,
+    D,
+    PRR,
+    ROR,
+    ChiSquare,
+    ROR_Lower95
+):
+    """
+    Compatibility wrapper used by the Streamlit dashboard.
+
+    Calls SignalPredictor internally.
+    """
+
+    predictor = SignalPredictor()
+
+    return predictor.predict(
+        A=A,
+        B=B,
+        C=C,
+        D=D,
+        PRR=PRR,
+        ROR=ROR,
+        ChiSquare=ChiSquare,
+        ROR_Lower95=ROR_Lower95
+    )
+
+
+# --------------------------------------------------
+# TEST
+# --------------------------------------------------
 
 if __name__ == "__main__":
 
@@ -97,4 +154,3 @@ if __name__ == "__main__":
 
     for key, value in result.items():
         print(f"{key}: {value}")
-   

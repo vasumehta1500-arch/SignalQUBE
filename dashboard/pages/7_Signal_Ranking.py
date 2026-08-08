@@ -24,7 +24,7 @@ st.title("🏆 Signal Ranking")
 st.subheader("Top Drug-Reaction Signals in SignalQUBE")
 
 with st.spinner("Calculating signal rankings..."):
-    pairs = detector.top_drug_reaction_pairs(100)
+    pairs = detector.top_signals(100)
 
 results = []
 

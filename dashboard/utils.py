@@ -2,43 +2,71 @@ import pandas as pd
 import streamlit as st
 
 
+DEPLOYMENT_FILE = "data/deployment/signal_results.csv"
+
+
 @st.cache_data
-def load_demo():
-    return pd.read_csv(
-        "data/processed/demo_clean.csv",
+def load_signals():
+    """
+    Load the deployment signal dataset.
+    """
+    df = pd.read_csv(
+        DEPLOYMENT_FILE,
         low_memory=False
     )
+
+    if "drugname" in df.columns:
+        df["drugname"] = (
+            df["drugname"]
+            .astype(str)
+            .str.strip()
+            .str.upper()
+        )
+
+    if "pt" in df.columns:
+        df["pt"] = (
+            df["pt"]
+            .astype(str)
+            .str.strip()
+            .str.upper()
+        )
+
+    return df
+
+
+@st.cache_data
+def load_demo():
+    """
+    Deployment-safe summary representing FAERS reports.
+    """
+    return pd.DataFrame({
+        "dataset": ["DEMO"],
+        "records": [385288]
+    })
 
 
 @st.cache_data
 def load_drug():
-    df = pd.read_csv(
-        "data/processed/drug_clean.csv",
-        low_memory=False
-    )
-
-    df = df.dropna(subset=["drugname"])
-    df["drugname"] = df["drugname"].str.strip().str.upper()
-
-    return df
+    """
+    Load signal dataset for dashboard drug analysis.
+    """
+    return load_signals()
 
 
 @st.cache_data
 def load_reaction():
-    df = pd.read_csv(
-        "data/processed/reac_clean.csv",
-        low_memory=False
-    )
-
-    df = df.dropna(subset=["pt"])
-    df["pt"] = df["pt"].str.strip().str.upper()
-
-    return df
+    """
+    Load signal dataset for dashboard reaction analysis.
+    """
+    return load_signals()
 
 
 @st.cache_data
 def load_outcome():
-    return pd.read_csv(
-        "data/processed/outc_clean.csv",
-        low_memory=False
-    )
+    """
+    Deployment-safe summary representing FAERS outcomes.
+    """
+    return pd.DataFrame({
+        "dataset": ["OUTC"],
+        "records": [289721]
+    })
