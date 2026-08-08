@@ -5,7 +5,7 @@ import streamlit as st
 @st.cache_data
 def load_demo():
     return pd.read_csv(
-        "data/processed/demo_clean.csv",
+        "data/sample/demo_clean.csv",
         low_memory=False
     )
 
@@ -13,7 +13,7 @@ def load_demo():
 @st.cache_data
 def load_drug():
     df = pd.read_csv(
-        "data/processed/drug_clean.csv",
+        "data/sample/drug_clean.csv",
         low_memory=False
     )
 
@@ -26,7 +26,7 @@ def load_drug():
 @st.cache_data
 def load_reaction():
     df = pd.read_csv(
-        "data/processed/reac_clean.csv",
+        "data/sample/reac_clean.csv",
         low_memory=False
     )
 
@@ -39,6 +39,6 @@ def load_reaction():
 @st.cache_data
 def load_outcome():
     return pd.read_csv(
-        "data/processed/outc_clean.csv",
+        "data/sample/outc_clean.csv",
         low_memory=False
     )

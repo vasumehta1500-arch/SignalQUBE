@@ -6,7 +6,9 @@ import plotly.express as px
 class DrugAnalysis:
 
     def __init__(self):
-        self.processed_path = Path("data/processed")
+        # Use the small dataset for Streamlit deployment
+        self.processed_path = Path("data/sample")
+
         self.result_path = Path("data/results")
 
         # Create results folder if it doesn't exist
@@ -61,7 +63,5 @@ class DrugAnalysis:
         fig.write_html(
             self.result_path / "top20_drugs.html"
         )
-
-        
 
         print("\nChart saved successfully!")

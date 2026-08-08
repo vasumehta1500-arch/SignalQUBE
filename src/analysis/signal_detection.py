@@ -4,7 +4,8 @@ import pandas as pd
 class SignalDetector:
 
     def __init__(self):
-        self.processed_path = "data/processed/"
+        # Use the lightweight dataset for deployment
+        self.processed_path = "data/sample/"
         self._merged = None
 
     def load_data(self):
@@ -113,7 +114,6 @@ class SignalDetector:
         print(f"A={A}, B={B}, C={C}, D={D}")
         print("=" * 50)
 
-        # No signal found
         if A == 0:
             return {
                 "Drug": drug_name,
@@ -127,7 +127,6 @@ class SignalDetector:
                 "Signal": "⚪ No Signal"
             }
 
-        # Haldane correction
         A_adj = A if A > 0 else 0.5
         B_adj = B if B > 0 else 0.5
         C_adj = C if C > 0 else 0.5
