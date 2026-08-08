@@ -23,9 +23,20 @@ class SignalPredictor:
 
         print("Loading ML model...")
 
+        if not MODEL_FILE.exists():
+            raise FileNotFoundError(
+                f"Model file not found: {MODEL_FILE}"
+            )
+
+        if not SCALER_FILE.exists():
+            raise FileNotFoundError(
+                f"Scaler file not found: {SCALER_FILE}"
+            )
+
         self.model = joblib.load(MODEL_FILE)
         self.scaler = joblib.load(SCALER_FILE)
 
+        # Features used by the ML model
         self.features = [
             "A",
             "B",
@@ -36,6 +47,7 @@ class SignalPredictor:
             "ChiSquare",
             "ROR_Lower95"
         ]
+
 
     # --------------------------------------------------
     # PREDICT
@@ -53,6 +65,7 @@ class SignalPredictor:
         ROR_Lower95
     ):
 
+        # Create input DataFrame
         data = pd.DataFrame([{
             "A": A,
             "B": B,
@@ -64,8 +77,7 @@ class SignalPredictor:
             "ROR_Lower95": ROR_Lower95
         }])
 
-        # Make sure feature order is identical
-        # to the training dataset
+        # Make sure feature order matches training
         data = data[self.features]
 
         # Apply scaler
@@ -76,11 +88,12 @@ class SignalPredictor:
             data_scaled
         )[0]
 
-        # Probability
+        # Prediction probability
         probability = self.model.predict_proba(
             data_scaled
         )[0][1]
 
+        # Convert prediction to readable result
         if prediction == 1:
             result = "🔴 Signal Detected"
         else:
@@ -110,11 +123,6 @@ def predict_signal(
     ChiSquare,
     ROR_Lower95
 ):
-    """
-    Compatibility wrapper used by the Streamlit dashboard.
-
-    Calls SignalPredictor internally.
-    """
 
     predictor = SignalPredictor()
 
@@ -154,3 +162,6 @@ if __name__ == "__main__":
 
     for key, value in result.items():
         print(f"{key}: {value}")
+
+
+

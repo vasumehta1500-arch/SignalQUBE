@@ -2,13 +2,30 @@ import streamlit as st
 import pandas as pd
 import sys
 import plotly.graph_objects as go
-import plotly.express as px
 from pathlib import Path
 
-sys.path.append(str(Path(__file__).resolve().parents[2]))
+
+# ==================================================
+# PROJECT PATH
+# ==================================================
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.append(str(PROJECT_ROOT))
+
+
+# ==================================================
+# IMPORTS
+# ==================================================
 
 from src.analysis.signal_detection import SignalDetector
 from src.ml.predict_model import predict_signal
+
+
+# ==================================================
+# PAGE CONFIG
+# ==================================================
 
 st.set_page_config(
     page_title="Signal Comparison",
@@ -16,69 +33,176 @@ st.set_page_config(
     layout="wide"
 )
 
+
+# ==================================================
+# LOAD SIGNAL DETECTOR
+# ==================================================
+
 @st.cache_resource
 def get_detector():
     return SignalDetector()
 
+
 detector = get_detector()
+
+
+# ==================================================
+# PREPARE DATA
+# ==================================================
 
 merged = detector.prepare_data()
 
-drug_list = sorted(merged["drugname"].dropna().unique())
-reaction_list = sorted(merged["pt"].dropna().unique())
+drug_list = sorted(
+    merged["drugname"]
+    .dropna()
+    .unique()
+)
+
+reaction_list = sorted(
+    merged["pt"]
+    .dropna()
+    .unique()
+)
+
+
+# ==================================================
+# PAGE TITLE
+# ==================================================
 
 st.title("⚖️ Signal Comparison")
-st.subheader("Traditional Pharmacovigilance vs AI Prediction")
+
+st.subheader(
+    "Traditional Pharmacovigilance vs AI Prediction"
+)
 
 st.markdown("---")
+
+
+# ==================================================
+# SELECT DRUG AND REACTION
+# ==================================================
 
 col1, col2 = st.columns(2)
 
 with col1:
+
     selected_drug = st.selectbox(
         "💊 Select Drug",
         drug_list
     )
 
+
 with col2:
+
     selected_reaction = st.selectbox(
         "⚠️ Select Reaction",
         reaction_list
     )
 
+
 st.markdown("")
 
-if st.button("🚀 Compare Methods", use_container_width=True):
+
+# ==================================================
+# COMPARE METHODS
+# ==================================================
+
+if st.button(
+    "🚀 Compare Methods",
+    use_container_width=True
+):
+
+    # --------------------------------------------------
+    # TRADITIONAL SIGNAL
+    # --------------------------------------------------
 
     result = detector.calculate_signal(
         selected_drug,
         selected_reaction
     )
 
-    # -----------------------------
-    # Handle No Signal
-    # -----------------------------
+
+    # --------------------------------------------------
+    # HANDLE NO STATISTICAL RESULT
+    # --------------------------------------------------
 
     if result["PRR"] is None:
 
-        st.warning("No statistical signal found.")
+        st.warning(
+            "No statistical signal found for the "
+            "selected drug and reaction."
+        )
 
         st.stop()
 
+
+    # ==================================================
+    # MACHINE LEARNING PREDICTION
+    # ==================================================
+
     prediction = predict_signal(
-        result["A"],
-        result["B"],
-        result["C"],
-        result["D"],
-        result["PRR"],
-        result["ROR"]
+        A=result["A"],
+        B=result["B"],
+        C=result["C"],
+        D=result["D"],
+        PRR=result["PRR"],
+        ROR=result["ROR"],
+        ChiSquare=result["ChiSquare"],
+        ROR_Lower95=result["ROR_Lower95"]
     )
 
-    st.success("Comparison Completed Successfully")
+
+    # --------------------------------------------------
+    # ML VALUES
+    # --------------------------------------------------
+
+    ml_raw_prediction = prediction["Prediction"]
+
+    confidence = prediction["Probability"]
+
+
+    # --------------------------------------------------
+    # CONVERT ML RESULT TO READABLE LABEL
+    # --------------------------------------------------
+
+    if ml_raw_prediction == 1:
+
+        if confidence >= 75:
+
+            ai_prediction = "Strong Signal"
+
+        elif confidence >= 50:
+
+            ai_prediction = "Moderate Signal"
+
+        else:
+
+            ai_prediction = "Weak Signal"
+
+    else:
+
+        ai_prediction = "No Signal"
+
+
+    # ==================================================
+    # SUCCESS
+    # ==================================================
+
+    st.success(
+        "Comparison Completed Successfully"
+    )
+
 
     st.markdown("---")
 
-    st.header("Traditional Signal Detection")
+
+    # ==================================================
+    # TRADITIONAL METHOD
+    # ==================================================
+
+    st.header(
+        "Traditional Signal Detection"
+    )
 
     c1, c2, c3 = st.columns(3)
 
@@ -97,52 +221,119 @@ if st.button("🚀 Compare Methods", use_container_width=True):
         result["Signal"]
     )
 
+
     st.markdown("---")
 
-    st.header("Machine Learning Prediction")
+
+    # ==================================================
+    # MACHINE LEARNING
+    # ==================================================
+
+    st.header(
+        "Machine Learning Prediction"
+    )
 
     c4, c5 = st.columns(2)
 
     c4.metric(
         "Prediction",
-        prediction["Prediction"]
+        ai_prediction
     )
 
     c5.metric(
         "Confidence",
-        f"{prediction['Confidence']} %"
+        f"{confidence} %"
     )
+
 
     st.markdown("---")
 
+
+    # ==================================================
+    # NORMALIZE TRADITIONAL SIGNAL
+    # ==================================================
+
     traditional = result["Signal"]
-    ai = prediction["Prediction"]
 
-    if "Strong" in traditional and "Strong" in ai:
+    if "Strong" in traditional:
+
+        traditional_level = "Strong"
+
+    elif "Moderate" in traditional:
+
+        traditional_level = "Moderate"
+
+    elif "Weak" in traditional:
+
+        traditional_level = "Weak"
+
+    else:
+
+        traditional_level = "No Signal"
+
+
+    # ==================================================
+    # NORMALIZE AI SIGNAL
+    # ==================================================
+
+    if ai_prediction == "Strong Signal":
+
+        ai_level = "Strong"
+
+    elif ai_prediction == "Moderate Signal":
+
+        ai_level = "Moderate"
+
+    elif ai_prediction == "Weak Signal":
+
+        ai_level = "Weak"
+
+    else:
+
+        ai_level = "No Signal"
+
+
+    # ==================================================
+    # COMPARE METHODS
+    # ==================================================
+
+    if traditional_level == ai_level:
 
         agreement = "✅ Both methods agree"
 
-    elif "Weak" in traditional and "Weak" in ai:
-
-        agreement = "✅ Both methods agree"
-
-    elif "Moderate" in traditional and "Strong" in ai:
-
-        agreement = "⚠ AI predicts a stronger signal"
-
-    elif "Strong" in traditional and "Weak" in ai:
+    elif (
+        traditional_level == "Strong"
+        and ai_level in ["Moderate", "Weak", "No Signal"]
+    ):
 
         agreement = "⚠ AI predicts a weaker signal"
+
+    elif (
+        traditional_level in ["Weak", "No Signal"]
+        and ai_level == "Strong"
+    ):
+
+        agreement = "⚠ AI predicts a stronger signal"
 
     else:
 
         agreement = "⚠ Methods disagree"
 
-    st.header("Comparison Result")
 
-    st.info(agreement)
+    # ==================================================
+    # COMPARISON RESULT
+    # ==================================================
 
-    if "agree" in agreement.lower():
+    st.header(
+        "Comparison Result"
+    )
+
+    st.info(
+        agreement
+    )
+
+
+    if "Both methods agree" in agreement:
 
         st.success(
             """
@@ -164,47 +355,143 @@ Clinical review is recommended.
 """
         )
 
+
+    # ==================================================
+    # ML DEBUG INFORMATION
+    # ==================================================
+
+    with st.expander(
+        "🔍 View ML Details"
+    ):
+
+        st.write(
+            "Raw ML Prediction:",
+            ml_raw_prediction
+        )
+
+        st.write(
+            "ML Probability:",
+            f"{confidence} %"
+        )
+
+        st.write(
+            "Traditional Signal:",
+            result["Signal"]
+        )
+
+        st.write(
+            "A:",
+            result["A"]
+        )
+
+        st.write(
+            "B:",
+            result["B"]
+        )
+
+        st.write(
+            "C:",
+            result["C"]
+        )
+
+        st.write(
+            "D:",
+            result["D"]
+        )
+
+        st.write(
+            "PRR:",
+            result["PRR"]
+        )
+
+        st.write(
+            "ROR:",
+            result["ROR"]
+        )
+
+        st.write(
+            "Chi-Square:",
+            result["ChiSquare"]
+        )
+
+        st.write(
+            "ROR Lower 95%:",
+            result["ROR_Lower95"]
+        )
+
+
     st.markdown("---")
+
+
+    # ==================================================
+    # COMPARISON TABLE
+    # ==================================================
 
     comparison = pd.DataFrame({
 
-        "Metric":[
+        "Metric": [
+
             "Drug",
             "Reaction",
+            "A",
+            "B",
+            "C",
+            "D",
             "PRR",
             "ROR",
+            "Chi-Square",
+            "ROR Lower 95%",
             "Traditional Signal",
             "AI Prediction",
-            "Confidence",
+            "AI Confidence",
             "Agreement"
+
         ],
 
-        "Traditional":[
+        "Traditional": [
+
             result["Drug"],
             result["Reaction"],
+            result["A"],
+            result["B"],
+            result["C"],
+            result["D"],
             result["PRR"],
             result["ROR"],
+            result["ChiSquare"],
+            result["ROR_Lower95"],
             result["Signal"],
             "-",
             "-",
             agreement
+
         ],
 
-        "Machine Learning":[
+        "Machine Learning": [
+
             result["Drug"],
             result["Reaction"],
             "-",
             "-",
-            prediction["Prediction"],
-            prediction["Prediction"],
-            f"{prediction['Confidence']} %",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+            ai_prediction,
+            f"{confidence} %",
             agreement
+
         ]
 
     })
 
-  
-    st.subheader("Comparison Table")
+
+    st.subheader(
+        "Comparison Table"
+    )
 
     st.dataframe(
         comparison,
@@ -212,7 +499,15 @@ Clinical review is recommended.
         use_container_width=True
     )
 
-    csv = comparison.to_csv(index=False).encode("utf-8")
+
+    # ==================================================
+    # DOWNLOAD REPORT
+    # ==================================================
+
+    csv = comparison.to_csv(
+        index=False
+    ).encode("utf-8")
+
 
     st.download_button(
         "📥 Download Comparison Report",
@@ -221,45 +516,90 @@ Clinical review is recommended.
         "text/csv"
     )
 
+
     st.markdown("---")
-    st.subheader("📊 Traditional vs AI Analysis")
 
-    # Prepare values
+
+    # ==================================================
+    # CHART
+    # ==================================================
+
+    st.subheader(
+        "📊 Traditional vs AI Analysis"
+    )
+
+
     prr = result["PRR"]
-    ror = result["ROR"]
-    confidence = prediction["Confidence"]
 
-    # Create figure
+    ror = result["ROR"]
+
+    confidence = prediction["Probability"]
+
+
+    # --------------------------------------------------
+    # CREATE CHART
+    # --------------------------------------------------
+
     fig = go.Figure()
 
-    # Traditional Method
+
+    # Traditional PRR
+
     fig.add_trace(
         go.Bar(
-            name="Traditional",
-            x=["PRR", "ROR"],
-            y=[prr, ror],
-            marker_color="royalblue"
+            name="PRR",
+            x=["Traditional"],
+            y=[prr]
         )
     )
 
-    # Machine Learning
+
+    # Traditional ROR
+
     fig.add_trace(
         go.Bar(
-            name="Logistic Regression",
-            x=["Confidence"],
-            y=[confidence],
-            marker_color="orange"
+            name="ROR",
+            x=["Traditional"],
+            y=[ror]
         )
     )
+
+
+    # AI Confidence
+
+    fig.add_trace(
+        go.Bar(
+            name="AI Confidence",
+            x=["Machine Learning"],
+            y=[confidence]
+        )
+    )
+
+
+    # --------------------------------------------------
+    # CHART LAYOUT
+    # --------------------------------------------------
 
     fig.update_layout(
-        title="Traditional Statistical Method vs Logistic Regression",
+
+        title=(
+            "Traditional Statistical Method "
+            "vs Logistic Regression"
+        ),
+
         xaxis_title="Method",
+
         yaxis_title="Value",
+
         barmode="group",
+
         height=500
+
     )
 
-    st.plotly_chart(fig, use_container_width=True)
 
-   
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
