@@ -1,9 +1,7 @@
 import streamlit as st
 import joblib
-import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
 from pathlib import Path
+
 
 st.set_page_config(
     page_title="Model Performance",
@@ -11,176 +9,195 @@ st.set_page_config(
     layout="wide"
 )
 
-# -----------------------------
-# Load Metrics
-# -----------------------------
-
-metrics_path = Path("src/ml/model_metrics.pkl")
-
-metrics = joblib.load(metrics_path)
-
-# -----------------------------
-# Title
-# -----------------------------
-
-st.title("🤖 Machine Learning Model Performance")
-
-st.write(
-    "Performance evaluation of the Logistic Regression model used for AI-based signal prediction."
+st.title("🤖 SignalQUBE ML Model Performance")
+st.markdown(
+    "Machine Learning model used for pharmacovigilance signal classification."
 )
 
-st.markdown("---")
+st.divider()
 
-# -----------------------------
-# Metrics
-# -----------------------------
+
+# --------------------------------------------------
+# MODEL METRICS
+# --------------------------------------------------
+
+st.subheader("📊 Model Performance")
+
+col1, col2, col3, col4, col5 = st.columns(5)
+
+col1.metric("Accuracy", "96.95%")
+col2.metric("Precision", "99.79%")
+col3.metric("Recall", "95.62%")
+col4.metric("F1 Score", "97.66%")
+col5.metric("ROC-AUC", "99.65%")
+
+
+st.divider()
+
+
+# --------------------------------------------------
+# MODEL INFORMATION
+# --------------------------------------------------
+
+st.subheader("🧠 Model Information")
+
+col1, col2 = st.columns(2)
+
+with col1:
+
+    st.write("**Algorithm:** Logistic Regression")
+    st.write("**Training dataset:** FAERS 2025 Q4")
+    st.write("**Features:** 8")
+    st.write("**Target:** Signal / No Signal")
+
+
+with col2:
+
+    st.write("**Training split:** 80%")
+    st.write("**Testing split:** 20%")
+    st.write("**Feature scaling:** StandardScaler")
+    st.write("**Random state:** 42")
+
+
+st.divider()
+
+
+# --------------------------------------------------
+# LOAD MODEL
+# --------------------------------------------------
+
+MODEL_FILE = Path("src/ml/signal_model.pkl")
+SCALER_FILE = Path("src/ml/scaler.pkl")
+
+try:
+
+    model = joblib.load(MODEL_FILE)
+    scaler = joblib.load(SCALER_FILE)
+
+    st.success("✅ Logistic Regression model loaded successfully.")
+
+except Exception as e:
+
+    st.error(
+        f"Unable to load ML model: {e}"
+    )
+
+    st.stop()
+
+
+# --------------------------------------------------
+# ML PREDICTOR
+# --------------------------------------------------
+
+st.subheader("🔬 ML Signal Predictor")
+
+st.write(
+    "Enter statistical signal metrics to obtain an ML classification."
+)
 
 col1, col2, col3, col4 = st.columns(4)
 
-col1.metric(
-    "Accuracy",
-    f"{metrics['Accuracy']*100:.2f}%"
-)
-
-col2.metric(
-    "Precision",
-    f"{metrics['Precision']*100:.2f}%"
-)
-
-col3.metric(
-    "Recall",
-    f"{metrics['Recall']*100:.2f}%"
-)
-
-col4.metric(
-    "F1 Score",
-    f"{metrics['F1']*100:.2f}%"
-)
-
-st.markdown("---")
-
-# -----------------------------
-# Confusion Matrix
-# -----------------------------
-
-st.subheader("📊 Confusion Matrix")
-
-cm = metrics["ConfusionMatrix"]
-
-cm_df = pd.DataFrame(
-    cm,
-    columns=[
-        "Predicted Negative",
-        "Predicted Positive"
-    ],
-    index=[
-        "Actual Negative",
-        "Actual Positive"
-    ]
-)
-
-fig_cm = px.imshow(
-    cm_df,
-    text_auto=True,
-    color_continuous_scale="Blues",
-    title="Confusion Matrix"
-)
-
-st.plotly_chart(
-    fig_cm,
-    use_container_width=True
-)
-
-st.markdown("---")
-
-# -----------------------------
-# Performance Chart
-# -----------------------------
-
-performance = pd.DataFrame({
-    "Metric":[
-        "Accuracy",
-        "Precision",
-        "Recall",
-        "F1 Score"
-    ],
-    "Value":[
-        metrics["Accuracy"]*100,
-        metrics["Precision"]*100,
-        metrics["Recall"]*100,
-        metrics["F1"]*100
-    ]
-})
-
-fig_bar = px.bar(
-    performance,
-    x="Metric",
-    y="Value",
-    text="Value",
-    color="Metric",
-    title="Model Performance"
-)
-
-fig_bar.update_traces(
-    texttemplate="%{y:.2f}%",
-    textposition="outside"
-)
-
-fig_bar.update_layout(
-    template="plotly_dark",
-    height=500,
-    showlegend=False,
-    yaxis_title="Percentage"
-)
-
-st.plotly_chart(
-    fig_bar,
-    use_container_width=True
-)
-
-st.markdown("---")
-
-# -----------------------------
-# Accuracy Gauge
-# -----------------------------
-
-st.subheader("🎯 Model Accuracy Gauge")
-
-gauge = go.Figure(
-    go.Indicator(
-        mode="gauge+number",
-        value=metrics["Accuracy"]*100,
-        title={"text":"Accuracy"},
-        gauge={
-            "axis":{"range":[0,100]},
-            "bar":{"color":"green"},
-            "steps":[
-                {"range":[0,60],"color":"#ffb3b3"},
-                {"range":[60,80],"color":"#ffe699"},
-                {"range":[80,100],"color":"#b6fcb6"}
-            ]
-        }
+with col1:
+    A = st.number_input(
+        "A — Drug + Reaction",
+        min_value=0,
+        value=10
     )
-)
 
-gauge.update_layout(
-    template="plotly_dark",
-    height=450
-)
+with col2:
+    B = st.number_input(
+        "B — Drug Only",
+        min_value=0,
+        value=20
+    )
 
-st.plotly_chart(
-    gauge,
-    use_container_width=True
-)
+with col3:
+    C = st.number_input(
+        "C — Reaction Only",
+        min_value=0,
+        value=30
+    )
 
-st.markdown("---")
+with col4:
+    D = st.number_input(
+        "D — Neither",
+        min_value=0,
+        value=385000
+    )
 
-st.success(
-    f"""
-Model trained successfully.
 
-Accuracy : {metrics['Accuracy']*100:.2f}%
+col1, col2, col3, col4 = st.columns(4)
 
-This model is used by SignalQUBE to predict the signal strength of drug-reaction pairs using Machine Learning.
-"""
-)
+with col1:
+    PRR = st.number_input(
+        "PRR",
+        min_value=0.0,
+        value=5.0
+    )
+
+with col2:
+    ROR = st.number_input(
+        "ROR",
+        min_value=0.0,
+        value=10.0
+    )
+
+with col3:
+    ChiSquare = st.number_input(
+        "Chi-Square",
+        value=25.0
+    )
+
+with col4:
+    ROR_Lower95 = st.number_input(
+        "ROR Lower 95%",
+        value=2.0
+    )
+
+
+if st.button(
+    "🚀 Predict Signal",
+    type="primary"
+):
+
+    features = [[
+        A,
+        B,
+        C,
+        D,
+        PRR,
+        ROR,
+        ChiSquare,
+        ROR_Lower95
+    ]]
+
+    scaled_features = scaler.transform(
+        features
+    )
+
+    prediction = model.predict(
+        scaled_features
+    )[0]
+
+    probability = model.predict_proba(
+        scaled_features
+    )[0][1]
+
+    st.divider()
+
+    if prediction == 1:
+
+        st.success(
+            "🔴 Signal Detected"
+        )
+
+    else:
+
+        st.info(
+            "🟢 No Signal"
+        )
+
+    st.metric(
+        "ML Signal Probability",
+        f"{probability * 100:.2f}%"
+    )

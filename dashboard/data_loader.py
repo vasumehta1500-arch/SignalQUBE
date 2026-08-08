@@ -5,7 +5,7 @@ import pandas as pd
 @st.cache_data
 def load_demo():
     return pd.read_csv(
-        "data/sample/demo_clean.csv",
+        "data/processed/demo_clean.csv",
         low_memory=False
     )
 
@@ -13,7 +13,7 @@ def load_demo():
 @st.cache_data
 def load_drug():
     return pd.read_csv(
-        "data/sample/drug_clean.csv",
+        "data/processed/drug_clean.csv",
         low_memory=False
     )
 
@@ -21,7 +21,7 @@ def load_drug():
 @st.cache_data
 def load_reaction():
     return pd.read_csv(
-        "data/sample/reac_clean.csv",
+        "data/processed/reac_clean.csv",
         low_memory=False
     )
 
@@ -29,6 +29,6 @@ def load_reaction():
 @st.cache_data
 def load_outcome():
     return pd.read_csv(
-        "data/sample/outc_clean.csv",
+        "data/processed/outc_clean.csv",
         low_memory=False
     )
