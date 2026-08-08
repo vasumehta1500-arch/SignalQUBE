@@ -21,3 +21,5 @@ data/processed/outc_clean.csv
 *.log
 # Full FDA FAERS processed datasets
 data/processed/2025Q4/
+# Keep deployment signal dataset in GitHub
+# data/deployment/signal_results.csv
