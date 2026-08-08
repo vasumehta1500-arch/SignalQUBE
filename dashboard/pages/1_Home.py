@@ -30,7 +30,7 @@ signals = load_signals()
 st.title("🧬 SignalQUBE")
 
 st.markdown("""
-### AI-Powered Pharmacovigilance Signal Detection System
+### Machine Learning solution to Pharmacovigilance Signal Detection System
 
 Using **FAERS**, **Machine Learning**, **PRR**, and **ROR**
 to identify potential adverse drug reaction signals.
@@ -131,70 +131,6 @@ Logistic Regression
 
 st.markdown("---")
 
-
-# -----------------------------
-# Workflow Automation
-# -----------------------------
-
-st.subheader("⚙️ Workflow Automation")
-
-st.success("""
-SignalQUBE uses **Prefect** to automate:
-
-- Data Validation
-- Dataset Preparation
-- Machine Learning Training
-- Signal Detection Testing
-""")
-
-
-# -----------------------------
-# Workflow
-# -----------------------------
-
-st.subheader("🔄 SignalQUBE Workflow")
-
-# -----------------------------
-# Workflow
-# -----------------------------
-
-st.markdown("---")
-
-st.subheader("⚙️ Workflow Automation")
-
-st.success("""
-SignalQUBE uses **Prefect** to automate:
-
-- Data Validation
-- Dataset Preparation
-- Machine Learning Training
-- Signal Detection Testing
-
-This reduces manual execution and provides a reproducible workflow.
-""")
-
-st.subheader("🔄 SignalQUBE Workflow")
-
-# -----------------------------
-# Workflow
-# -----------------------------
-
-st.markdown("---")
-
-st.subheader("⚙️ Workflow Automation")
-
-st.success("""
-SignalQUBE uses **Prefect** to automate:
-
-- Data Validation
-- Dataset Preparation
-- Machine Learning Training
-- Signal Detection Testing
-
-This reduces manual execution and provides a reproducible workflow.
-""")
-
-st.subheader("🔄 SignalQUBE Workflow")
 
 # -----------------------------
 # Workflow
