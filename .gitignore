@@ -19,3 +19,5 @@ data/processed/outc_clean.csv
 
 # Logs
 *.log
+# Full FDA FAERS processed datasets
+data/processed/2025Q4/
